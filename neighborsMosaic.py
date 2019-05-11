@@ -1,10 +1,13 @@
 from PIL import Image, ImageOps
 import numpy as np
 import itertools as iter
+from importlib import reload
 from sklearn.neighbors import NearestNeighbors
+import diffPairs as dp
+reload(dp)
 
-img_fname = 'selfie2.jpg'
-other_imgs_fnames = ['selfie4.jpg', 'selfie2.jpg', 'selfie1.jpg']
+img_fname = 'selfie1.jpg'
+other_imgs_fnames = ['selfie2.jpg', 'selfie3.jpg', 'selfie4.jpg', 'selfie5.jpg', 'selfie6.jpg']
 output_fname = 'output.png'
 square_size = 70
 stretch_amt = 1.2
@@ -18,7 +21,7 @@ def avg_color(img):
     return sum_pix
 
 
-def downsample_difference(img, size=4):
+def downsample_difference(img, size=3):
     down = np.array(img.resize((size,size), Image.BILINEAR))
     return down.ravel()
 
@@ -96,34 +99,43 @@ main_squares = get_squares_from_img(match_img)
 other_squares = np.array([get_squares_from_img(x) for x in other_imgs]).ravel()
 
 coordinates = list(iter.product(range(len(main_squares)), range(len(main_squares[0]))))
-np.random.shuffle(coordinates)
+# np.random.shuffle(coordinates)
 
 print('matching images...')
 pairs = []
-for i, coord in enumerate(coordinates):
+X = []
+for c in coordinates:
+    X.append(main_squares[c[0]][c[1]].val)
+Y = np.array([sq.val for sq in other_squares])
+ind_map = dp.min_diff_pair_mapping(X, Y)
 
-    if not i % 500:
-        print('   {} of {}...'.format(i, len(coordinates)))
-
-    cx, cy = coord
-    square_to_match = main_squares[cx][cy]
-    match, diff, best_ind = closest_square_match(square_to_match, other_squares)
-    square_to_match.paired = True
-    pairs.append((square_to_match, match))
-    other_squares = np.delete(other_squares, best_ind)
-
-    # diffuse error to neighboring cells
-    if not diffusion_amt:
-        continue
-    free_squares = get_neighboring_squares((cx, cy), main_squares)
-    if not free_squares:
-        continue
-    for s in free_squares:
-        edit_val = main_squares[s[0]][s[1]].val
-        main_squares[s[0]][s[1]].val = edit_val + (diff * diffusion_amt / len(free_squares))
+# for i, coord in enumerate(coordinates):
+#
+#     if not i % 500:
+#         print('   {} of {}...'.format(i, len(coordinates)))
+#
+#     cx, cy = coord
+#     square_to_match = main_squares[cx][cy]
+#     match, diff, best_ind = closest_square_match(square_to_match, other_squares)
+#     square_to_match.paired = True
+#     pairs.append((square_to_match, match))
+#     other_squares = np.delete(other_squares, best_ind)
+#
+#     # diffuse error to neighboring cells
+#     if not diffusion_amt:
+#         continue
+#     free_squares = get_neighboring_squares((cx, cy), main_squares)
+#     if not free_squares:
+#         continue
+#     for s in free_squares:
+#         edit_val = main_squares[s[0]][s[1]].val
+#         main_squares[s[0]][s[1]].val = edit_val + (diff * diffusion_amt / len(free_squares))
 
 # reassemble image from scraps
-for orig_square, matched_square in pairs:
+for x, y in enumerate(ind_map):
+    cx, cy = coordinates[x]
+    matched_square = other_squares[y]
+    orig_square = main_squares[cx][cy]
     match_img.paste(matched_square.img, orig_square.orig_box)
 
 match_img.save(output_fname)
