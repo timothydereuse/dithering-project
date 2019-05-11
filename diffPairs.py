@@ -1,11 +1,12 @@
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
-def min_diff_pair_mapping(X, Y, finish_early_factor=0.05, max_iter=500):
+def min_diff_pair_mapping(X, Y, finish_early_factor=0.05, max_iter=500, min_change=2):
     n = len(X)
     X = np.array(X)
     Y = np.array(Y)
     i = 0
+    amt_left = [len(X)]
     finish_early = int(finish_early_factor * n)
 
     if X.shape[1:] != Y.shape[1:]:
@@ -20,30 +21,29 @@ def min_diff_pair_mapping(X, Y, finish_early_factor=0.05, max_iter=500):
         y_active = np.setdiff1d(range(len(Y)), ind_map)
 
         neigh = NearestNeighbors(1)
-        neigh.fit(X[x_active])
-        best_dists, best_inds = neigh.kneighbors(Y[y_active], 1, return_distance=True)
+        neigh.fit(Y[y_active])
+        best_dists, best_inds = neigh.kneighbors(X[x_active], 1, return_distance=True)
 
-        for xind in range(len(X)):
-            candidates = [x for x in range(len(best_inds)) if best_inds[x][0] == xind]
+        for yind in range(len(y_active)):
+            candidates = [x for x in range(len(best_inds)) if best_inds[x][0] == yind]
             if len(candidates) == 0:
                 continue
             elif len(candidates) == 1:
-                ind_map[x_active[xind]] = y_active[candidates[0]]
+                ind_map[x_active[candidates[0]]] = y_active[yind]
             else:
                 chosen_ind = min(candidates, key=lambda x: best_dists[x])
-                ind_map[x_active[xind]] = y_active[chosen_ind]
+                ind_map[x_active[chosen_ind]] = y_active[yind]
 
         print('iteration {}, active pts {}'.format(i, sum(ind_map == -1)))
+        amt_left.append(sum(ind_map == -1))
 
         if sum(ind_map == -1) == 0:
             print('finished.')
             break
 
-        if sum(ind_map == -1) < finish_early:
+        change_stop = (np.diff(amt_left)[-1] * -1) < min_change
+        if change_stop or sum(ind_map == -1) < finish_early:
             print('finishing early.')
-            neigh = NearestNeighbors(1)
-            neigh.fit(Y[y_active])
-            best_dists, best_inds = neigh.kneighbors(X[x_active], 1, return_distance=True)
             for indx, indy in enumerate(best_inds):
                 indy = indy[0]
                 ind_map[x_active[indx]] = y_active[indy]

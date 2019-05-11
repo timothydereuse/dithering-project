@@ -6,11 +6,11 @@ from sklearn.neighbors import NearestNeighbors
 import diffPairs as dp
 reload(dp)
 
-img_fname = 'selfie1.jpg'
-other_imgs_fnames = ['selfie2.jpg', 'selfie3.jpg', 'selfie4.jpg', 'selfie5.jpg', 'selfie6.jpg']
+img_fname = 'colorbend.png'
+other_imgs_fnames = ['selfie2.jpg', 'selfie3.jpg', 'selfie4.jpg']
 output_fname = 'output.png'
-square_size = 70
-stretch_amt = 1.2
+square_size = 40
+stretch_amt = 1
 dwnspl_others = 0.5
 diffusion_amt = 0
 
@@ -37,8 +37,8 @@ class CropImg(object):
 
 
 def get_squares_from_img(img_in, square_size=square_size):
-    grid_size_x = (img_in.size[0] // square_size) - 1
-    grid_size_y = (img_in.size[1] // square_size) - 1
+    grid_size_x = (img_in.size[0] // square_size)
+    grid_size_y = (img_in.size[1] // square_size)
 
     squares = [[0 for j in range(grid_size_y)] for i in range(grid_size_x)]
     for i in range(grid_size_x):
@@ -107,7 +107,7 @@ X = []
 for c in coordinates:
     X.append(main_squares[c[0]][c[1]].val)
 Y = np.array([sq.val for sq in other_squares])
-ind_map = dp.min_diff_pair_mapping(X, Y, finish_early_factor=0.3)
+ind_map = dp.min_diff_pair_mapping(X, Y, finish_early_factor=0.1)
 
 # for i, coord in enumerate(coordinates):
 #
@@ -138,4 +138,4 @@ for x, y in enumerate(ind_map):
     orig_square = main_squares[cx][cy]
     match_img.paste(matched_square.img, orig_square.orig_box)
 
-match_img.save(output_fname)
+match_img.save('stitched_{}'.format(output_fname))
