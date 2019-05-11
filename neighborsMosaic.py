@@ -107,7 +107,7 @@ X = []
 for c in coordinates:
     X.append(main_squares[c[0]][c[1]].val)
 Y = np.array([sq.val for sq in other_squares])
-ind_map = dp.min_diff_pair_mapping(X, Y)
+ind_map = dp.min_diff_pair_mapping(X, Y, finish_early_factor=0.3)
 
 # for i, coord in enumerate(coordinates):
 #
