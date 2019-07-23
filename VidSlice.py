@@ -10,7 +10,7 @@ class VidSlice(object):
         self.paired = False
 
     def _get_features(self, imgs, size=2, out_len=2):
-        # downsampled[t]
+        # first downsample each frame with PIL's resize
         downsampled = []
         for img in imgs:
             down_frame = Image.fromarray(img).resize((size, size), Image.BILINEAR)
@@ -18,8 +18,8 @@ class VidSlice(object):
             downsampled.append(down_frame)
         downsampled = np.array(downsampled)
 
+        # then average together nearby frames to end up with only @outlen
         result = np.array([], dtype='uint8')
-
         split_indices = np.array_split(np.arange(imgs.shape[0]), out_len)
         for inds in split_indices:
             x = downsampled[inds]

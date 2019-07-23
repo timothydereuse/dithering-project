@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
+# X is the target, Y is the source
 def min_diff_pair_mapping(X, Y, finish_early_factor=0.05, max_iter=500, min_change=2):
     n = len(X)
     X = np.array(X)

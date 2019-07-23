@@ -10,7 +10,7 @@ reload(VidSlice)
 
 
 def get_video_slices(clip, square_size):
-
+    fps = clip.fps
     nframes = int(clip.fps * clip.duration)
 
     x_grid_size = int(clip.size[0] / square_size)
@@ -45,10 +45,11 @@ if __name__ == '__main__':
 
     square_size = 120
     clip = VideoFileClip('{}/{}'.format(movies_dir, image_fname)).without_audio().subclip(1,2)
+    vidslices = get_video_slices(clip, square_size)
 
-    txt_clip = TextClip("OOGH",fontsize=90,color='white')
-    txt_clip = txt_clip.set_pos('center').set_duration(1)
-    video = CompositeVideoClip([clip, txt_clip])
-
-    # Write the result to a file (many options available !)
-    video.write_videofile("test_imgexport.webm")
+    # txt_clip = TextClip("OOGH",fontsize=90,color='white')
+    # txt_clip = txt_clip.set_pos('center').set_duration(1)
+    # video = CompositeVideoClip([clip, txt_clip])
+    #
+    # # Write the result to a file (many options available !)
+    # video.write_videofile("test_imgexport.webm")
