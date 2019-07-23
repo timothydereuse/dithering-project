@@ -86,12 +86,6 @@ main_img = Image.open(img_fname).convert('RGB')
 new_size = (int(main_img.size[0] * stretch_amt), int(main_img.size[1] * stretch_amt))
 match_img = main_img.resize(new_size)
 
-# other_imgs = [
-#     # main_img.transpose(Image.FLIP_LEFT_RIGHT),
-#     # main_img.transpose(Image.FLIP_TOP_BOTTOM),
-#     # main_img.transpose(Image.ROTATE_180)
-# ]
-
 other_imgs = [Image.open(fname) for fname in other_imgs_fnames]
 
 print('slicing images into squares...')
