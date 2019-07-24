@@ -30,7 +30,6 @@ def get_video_slices(clip, square_size):
                 x_off*square_size:(x_off+1)*square_size,
                 y_off*square_size:(y_off+1)*square_size,
                 :]
-            # square = Image.fromarray(square)
             vidslices[(x_off, y_off)][t] = square
 
     for pair in coordinates:
