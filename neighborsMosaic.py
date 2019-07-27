@@ -14,6 +14,7 @@ stretch_amt = 1
 dwnspl_others = 0.5
 diffusion_amt = 0
 
+
 def avg_color(img):
     arr = [j[:3] for sub in np.array(img) for j in sub]
     sum_pix = np.sum(arr, 0)
@@ -132,4 +133,4 @@ for x, y in enumerate(ind_map):
     orig_square = main_squares[cx][cy]
     match_img.paste(matched_square.img, orig_square.orig_box)
 
-match_img.save('stitched_{}'.format(output_fname))
+match_img.save(f'stitched_{output_fname}')

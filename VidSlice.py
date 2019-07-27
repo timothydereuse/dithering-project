@@ -4,6 +4,13 @@ import numpy as np
 class VidSlice(object):
     __slots__ = ['clip', 'grid_pos', 'features', 'paired', 'square_size', 'ulx', 'uly', 'lrx', 'lry']
     def __init__(self, crop_img, grid_pos):
+
+        if len(crop_img.shape) != 4 or crop_img.shape[1] != crop_img.shape[2]:
+            raise ValueError(f'Clip passed into VidSlice() must be a 4d matrix '
+                             f'with the middle two dimensions equal. given shape: {crop_img.shape}')
+        if crop_img.shape[0] == 0:
+            raise ValueError(f'Clip with shape {crop_img.shape} has no frames!')
+
         self.clip = crop_img
         self.grid_pos = grid_pos
         self.features = self._get_features(crop_img)
@@ -14,6 +21,7 @@ class VidSlice(object):
         self.lrx = (grid_pos[0] + 1) * self.square_size
         self.lry = (grid_pos[1] + 1) * self.square_size
 
+
     def _get_features(self, clip, size=2, out_len=2):
         # first downsample each frame with PIL's resize
         downsampled = []
@@ -22,7 +30,6 @@ class VidSlice(object):
             down_frame = np.array(down_frame).ravel() # all values in flat sequence
             downsampled.append(down_frame)
         downsampled = np.array(downsampled)
-
         # then average together nearby frames to end up with only @outlen
         result = np.array([], dtype='uint8')
         split_indices = np.array_split(np.arange(clip.shape[0]), out_len)

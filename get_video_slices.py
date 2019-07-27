@@ -12,12 +12,11 @@ reload(VidSlice)
 def get_video_slices(clip, square_size):
     fps = clip.fps
     nframes = int(clip.fps * clip.duration)
-
     x_grid_size = int(clip.size[0] / square_size)
     y_grid_size = int(clip.size[1] / square_size)
     coordinates = list(iter.product(range(x_grid_size), range(y_grid_size)))
 
-    vidslices = {} #np.zeros(np.floor(fps).astype('int'))
+    vidslices = {}
     for x_off, y_off in coordinates:
         vidslices[(x_off, y_off)] = np.zeros([nframes, square_size, square_size, 3], dtype='uint8')
 
@@ -36,6 +35,7 @@ def get_video_slices(clip, square_size):
         vidslices[pair] = VidSlice.VidSlice(vidslices[pair], pair)
 
     return vidslices
+
 
 if __name__ == '__main__':
     movies_dir = "C:/Users/Tim/Documents/goprofootage"
