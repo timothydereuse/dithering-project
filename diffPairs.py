@@ -11,9 +11,13 @@ def min_diff_pair_mapping(X, Y, finish_early_factor=0.05, max_iter=500, min_chan
     finish_early = int(finish_early_factor * n)
 
     if X.shape[1:] != Y.shape[1:]:
-        raise ValueError('X and Y must have the same dimensionality')
+        raise ValueError(f'X and Y must contain elements of the same dimensionality: {X[0].shape} vs {Y[0].shape}')
+        # print('truncating to match shapes of features: something is weird i guess')
+        # min_size = min(X.shape[1], Y.shape[1])
+        # X = X[:, :min_size]
+        # Y = Y[:, :min_size]
     if X.shape[0] > Y.shape[0]:
-        raise ValueError('X must have more data points than Y')
+        raise ValueError('X must have fewer data points than Y')
 
     ind_map = np.repeat(-1, n)
     for i in range(max_iter):

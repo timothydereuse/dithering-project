@@ -9,8 +9,9 @@ from importlib import reload
 reload(VidSlice)
 
 
-def get_video_slices(clip, square_size):
-    fps = clip.fps
+def get_video_slices(clip, square_size, fps_out):
+
+    fps = fps_out
     nframes = int(clip.fps * clip.duration)
     x_grid_size = int(clip.size[0] / square_size)
     y_grid_size = int(clip.size[1] / square_size)

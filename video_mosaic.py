@@ -7,66 +7,51 @@ import diffPairs as dp
 import get_video_slices as gvs
 import os
 import datetime
+import video_source_schemes as vss
+import os
+
+reload(vss)
 reload(dp)
 reload(gvs)
 
-movies_dir = "C:/Users/Tim/Documents/goprofootage"
-image_sources = [f"{movies_dir}/{f}" for f in
-                 ['GOPR0063.MP4', 'GOPR0064.MP4', 'GOPR0064.MP4']
-                 ]
-image_target = 'GOPR0064.MP4'
+proj_name = 'FORESHORTENED2'
+sourcefunc = vss.foreshortened_loud_load
+cwd = os.getcwd()
+timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
+out_fname = f"{proj_name}_{timestamp}"
+wkdr = f'{cwd}/{out_fname}'
+os.mkdir(wkdr)
 
-timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H%M%S')
-out_fname = f'textexport {timestamp}'
-
-
-def interval_length_generator():
-    start = 0
-    while True:
-        length = 0.1 + np.abs(np.random.normal(1, 1))
-        yield start, length
-        start = start + length
-
-
-square_size = 120
-full_raw_sources = [
-    VideoFileClip(image_sources[0]).without_audio().resize(0.60),
-    VideoFileClip(image_sources[0]).without_audio().resize(0.70),
-    VideoFileClip(image_sources[0]).without_audio().resize(0.60)
-]
-full_raw_target = VideoFileClip(f"{movies_dir}/{image_target}").without_audio()
+full_raw_sources, full_raw_target, timings, offsets = sourcefunc()
+max_intervals = np.inf
+square_size = 60
 fps_out = 29
 target_size = full_raw_target.size
 
-num_intervals = 220
-
-interval_gen = interval_length_generator()
+num_intervals = min(len(timings), max_intervals)
 
 for i in range(num_intervals):
     print(f'processing interval {i} of {num_intervals}...')
 
-    clip_start, clip_length = interval_gen.__next__()
+    clip_start, clip_length = timings[i]
 
     source_clips = []
     target_clips = []
 
     # get source slices
-    for source, offset in zip(full_raw_sources, [1, 2, 3, 4]):
+    for source, offset in zip(full_raw_sources, offsets):
 
-        new_clip_start = (clip_start + offset) % source.duration
-        new_clip_end = (new_clip_start + clip_length) % source.duration
-        if new_clip_start > new_clip_end: # necessary if clip crosses ending
-            new_clip_start = new_clip_end
-            new_clip_end = new_clip_start + clip_length
+        new_clip_start = (clip_start + offset)
+        new_clip_end = (new_clip_start + clip_length)
 
         clip = source.subclip(new_clip_start, new_clip_start+clip_length)
-        print(f'{new_clip_start}, {new_clip_start+clip_length}, {source.duration}')
-        vidslices = gvs.get_video_slices(clip, square_size)
+        vidslices = gvs.get_video_slices(clip, square_size, fps_out)
         source_clips += list(vidslices.values())
 
     # get target slices
     clip = full_raw_target.subclip(clip_start, clip_start + clip_length)
-    vidslices = gvs.get_video_slices(clip, square_size)
+    print(f'{clip.duration}')
+    vidslices = gvs.get_video_slices(clip, square_size, fps_out)
     target_clips += list(vidslices.values())
 
     frames_this_interval = target_clips[0].clip.shape[0]
@@ -90,26 +75,34 @@ for i in range(num_intervals):
 
     def make_frame(t):
         frame_idx = int(np.round(t * fps_out))
-        try:
-            frame = reassembled[frame_idx]
-        except IndexError:
-            new_idx = np.clip(frames_this_interval - frame_idx, 0, np.inf)
-            frame = reassembled[int(new_idx)]
+        frame_idx = np.clip(frame_idx, 0, reassembled.shape[0] - 1, dtype='uint8')
+        frame = reassembled[frame_idx]
         return frame
 
     final_clip = VideoClip(make_frame, duration=clip_length).rotate(-90)
-    final_clip.write_videofile(f"{out_fname}_{i}.mp4", fps=fps_out, bitrate="60000k")
+    final_clip.write_videofile(f"{wkdr}/{out_fname}_{i}.mp4", fps=fps_out, bitrate="30000k")
 
 full_raw_target.close()
 for x in full_raw_sources:
     x.close()
 
-load_clips = [VideoFileClip(f"{out_fname}_{i}.mp4") for i in range(num_intervals)]
-final_clip = concatenate_videoclips(load_clips)
-final_clip.write_videofile(f"{out_fname}_together.mp4",fps=fps_out, bitrate="60000k")
 
-for i in range(num_intervals):
-    try:
-        os.remove(f"{out_fname}_{i}.mp4")
-    except OSError:
-        pass
+def merge_video_files(fnames, output_fname, fps_out):
+    load_clips = [VideoFileClip(f) for f in fnames]
+    final_clip = concatenate_videoclips(load_clips)
+    final_clip.write_videofile(output_fname, fps=fps_out, bitrate="40000k")
+    for fname in fnames:
+        try:
+            os.remove(fname)
+        except OSError:
+            pass
+
+
+chunk_names = [f"{out_fname}_{i}.mp4" for i in range(num_intervals)]
+with open(f"{wkdr}/{out_fname}_fnames.txt", mode="w") as f:
+    for c in chunk_names:
+        f.write(f"file {c}\n")
+
+print(f'ffmpeg -f concat -i {out_fname}_fnames.txt -c copy output.mp4')
+
+
