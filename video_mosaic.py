@@ -14,21 +14,26 @@ reload(vss)
 reload(dp)
 reload(gvs)
 
-proj_name = 'FORESHORTENED2'
-sourcefunc = vss.foreshortened_loud_load
+proj_name = 'MONSTROUS'
+sourcefunc = vss.monstrous_load
+
 cwd = os.getcwd()
 timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M')
 out_fname = f"{proj_name}_{timestamp}"
 wkdr = f'{cwd}/{out_fname}'
 os.mkdir(wkdr)
 
-full_raw_sources, full_raw_target, timings, offsets = sourcefunc()
+full_raw_sources, full_raw_target, square_size, timings, offsets = sourcefunc()
 max_intervals = np.inf
-square_size = 60
 fps_out = 29
 target_size = full_raw_target.size
 
 num_intervals = min(len(timings), max_intervals)
+
+chunk_names = [f"{out_fname}_{i}.mp4" for i in range(num_intervals)]
+with open(f"{wkdr}/{out_fname}_fnames.txt", mode="w") as f:
+    for c in chunk_names:
+        f.write(f"file {c}\n")
 
 for i in range(num_intervals):
     print(f'processing interval {i} of {num_intervals}...')
@@ -96,12 +101,6 @@ def merge_video_files(fnames, output_fname, fps_out):
             os.remove(fname)
         except OSError:
             pass
-
-
-chunk_names = [f"{out_fname}_{i}.mp4" for i in range(num_intervals)]
-with open(f"{wkdr}/{out_fname}_fnames.txt", mode="w") as f:
-    for c in chunk_names:
-        f.write(f"file {c}\n")
 
 print(f'ffmpeg -f concat -i {out_fname}_fnames.txt -c copy output.mp4')
 
